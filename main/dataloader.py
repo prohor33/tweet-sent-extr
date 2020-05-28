@@ -26,7 +26,7 @@ def process_data(tweet, selected_text, sentiment, tokenizer, max_len):
     tok_tweet = tokenizer.encode_plus(replace_non_ascii(tweet.lower()), return_offsets_mapping=True)
     logging.disable(logging.WARNING)
 
-    # print(f"tweet: {tweet}, tok_tweet: {tok_tweet}")
+    # logger.info(f"tweet: {tweet}, tok_tweet: {tok_tweet}")
     input_ids_orig = tok_tweet['input_ids'][1:-1]
     tweet_offsets = tok_tweet['offset_mapping'][1:-1]
 

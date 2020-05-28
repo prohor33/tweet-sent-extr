@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict
 import numpy as np
 import torch
@@ -40,6 +41,7 @@ class EarlyStopping:
         self.best_score = None
         self.early_stop = False
         self.delta = delta
+        self.logger = logging.getLogger('EarlyStopping')
         if self.mode == "min":
             self.val_score = np.Inf
         else:
@@ -57,7 +59,7 @@ class EarlyStopping:
             self.save_checkpoint(epoch_score, model, model_path)
         elif score < self.best_score + self.delta:
             self.counter += 1
-            print('EarlyStopping counter: {} out of {}'.format(self.counter, self.patience))
+            self.logger.info('EarlyStopping counter: {} out of {}'.format(self.counter, self.patience))
             if self.counter >= self.patience:
                 self.early_stop = True
         else:
@@ -67,7 +69,7 @@ class EarlyStopping:
 
     def save_checkpoint(self, epoch_score, model, model_path):
         if epoch_score not in [-np.inf, np.inf, -np.nan, np.nan]:
-            print('Validation score improved ({} --> {}). Saving model!'.format(self.val_score, epoch_score))
+            self.logger.info('Validation score improved ({} --> {}). Saving model!'.format(self.val_score, epoch_score))
             torch.save(model.state_dict(), model_path)
         self.val_score = epoch_score
 

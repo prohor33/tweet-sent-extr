@@ -2,3 +2,6 @@
 data
 runs
 models
+storage/*
+.DS_Store
+.idea/*

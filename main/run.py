@@ -10,6 +10,7 @@ from main.utils import set_seed, FoldsScore, calculate_jaccard_score
 from datetime import datetime
 import argparse
 from models.roberta import TweetModel
+import logging
 
 
 class Config:
@@ -17,10 +18,13 @@ class Config:
     TRAIN_BATCH_SIZE = 64
     VALID_BATCH_SIZE = 16
     EPOCHS = 10
-    BERT_PATH = "roberta-base"
+    VERSION = 'roberta-base-squad2_1.0'
+    # BERT_PATH = "roberta-base"
+    BERT_PATH = "deepset/roberta-base-squad2"
     MODEL_PATH = "model.bin"
-    TRAINING_FILE = "/home/prohor/Documents/Code/kaggle/tweet-sent-extr/data/train_folds.csv"
-    MODELS_OUTPUT_DIR = "/home/prohor/Documents/Code/kaggle/tweet-sent-extr/models/current_2/"
+    TRAINING_FILE = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train_folds.csv"
+    MODELS_OUTPUT_DIR = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/models/current_2/"
+    LOGS_DIR = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs/"
     TOKENIZER = transformers.RobertaTokenizerFast.from_pretrained(BERT_PATH, add_prefix_space=True)
     DEVICE = 'cuda:0'
     DEBUG = True
@@ -30,18 +34,26 @@ def main(config: Config):
     set_seed(1)
 
     now = datetime.now()
-    version = 'roberta_1.2'
-    dt_string = now.strftime("%d_%m_%Y__%H_%M_%S") + '_' + version
+    dt_string = now.strftime("%d_%m_%Y__%H_%M_%S") + '_' + config.VERSION
+    log_dir = f"{config.LOGS_DIR}{dt_string}"
 
-    writer = SummaryWriter(log_dir=f"/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/runs/{dt_string}")
-    writer.add_text('model_version_info', version, 0)
+    writer = SummaryWriter(log_dir=log_dir)
+    writer.add_text('model_version_info', config.VERSION, 0)
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
+    file_handler = logging.FileHandler(f'{log_dir}/all.log', 'w')
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+
+    logger = logging.getLogger('main')
+    logger.addHandler(file_handler)
 
     folds_score = FoldsScore()
 
     for fold_i in range(5):
-        run_fold(fold_i, writer, config, folds_score)
+        run_fold(fold_i, writer, config, folds_score, logger)
 
-    print(f'Mean jaccard across all folds: {folds_score.mean()}')
+    logger.info(f'Mean jaccard across all folds: {folds_score.mean()}')
     writer.add_text('folds_jaccard', f'mean jaccard across all folds: {folds_score.mean()}')
 
     # Do the evaluation on test data
@@ -189,8 +201,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run ml')
     parser.add_argument('--device', metavar='device', required=False,
                         help='device', default='cuda:0')
+    parser.add_argument('--no-debug', dest='debug', action='store_false')
+    parser.set_defaults(debug=Config.DEBUG)
     args = parser.parse_args()
 
     config = Config()
     config.DEVICE = args.device
+    config.DEBUG = args.debug
     main(config)

@@ -82,7 +82,7 @@ def train_fn(data_loader, model, optimizer, device, fold, epoch, scheduler, conf
             break
 
 
-def eval_fn(data_loader, model, device, fold, epoch, config, writer):
+def eval_fn(data_loader, model, device, fold, epoch, config, writer, logger):
     model.eval()
     losses = AverageMeter()
     jaccards = AverageMeter()
@@ -136,15 +136,14 @@ def eval_fn(data_loader, model, device, fold, epoch, config, writer):
             if config.DEBUG and bi > 2:
                 break
 
-    it = len(data_loader) * (epoch + 1)
-    writer.add_scalar(f'jaccard_avg/valid/fold_{fold}', jaccards.avg, it)
-    writer.add_scalar(f'loss_avg/valid/fold_{fold}', losses.avg, it)
+    writer.add_scalar(f'jaccard_avg/valid/fold_{fold}', jaccards.avg, epoch)
+    writer.add_scalar(f'loss_avg/valid/fold_{fold}', losses.avg, epoch)
 
-    print(f"Jaccard = {jaccards.avg}")
+    logger.info(f"Jaccard = {jaccards.avg}")
     return jaccards.avg
 
 
-def run_fold(fold, writer, config, folds_score):
+def run_fold(fold, writer, config, folds_score, logger):
     dfx = pd.read_csv(config.TRAINING_FILE)
 
     df_train = dfx[dfx.kfold != fold].reset_index(drop=True)
@@ -176,17 +175,17 @@ def run_fold(fold, writer, config, folds_score):
         num_workers=2
     )
 
-    #     print('testing data preparation')
-    #     print('checking train')
+    #     logger.info('testing data preparation')
+    #     logger.info('checking train')
     #     for data in train_dataset:
     #       pass
-    #     print('checking valid')
+    #     logger.info('checking valid')
     #     for data in valid_dataset:
     #       pass
-    #     print('both ok')
+    #     logger.info('both ok')
 
     device = torch.device(config.DEVICE) if torch.cuda.is_available() else "cpu"
-    print('device:', device)
+    logger.info(f'device: {device}')
     model_config = RobertaConfig()
     model = TweetModel(bert_conf=model_config, global_conf=config)
     model.to(device)
@@ -206,17 +205,17 @@ def run_fold(fold, writer, config, folds_score):
     )
 
     es = EarlyStopping(patience=2, mode="max")
-    print(f"Training is Starting for fold={fold}")
+    logger.info(f"Training is Starting for fold={fold}")
 
     for epoch in range(config.EPOCHS):
         train_fn(train_data_loader, model, optimizer, device, fold, epoch, scheduler, config, writer)
-        jaccard = eval_fn(valid_data_loader, model, device, fold, epoch, config, writer)
+        jaccard = eval_fn(valid_data_loader, model, device, fold, epoch, config, writer, logger)
         folds_score.update(fold, jaccard)
-        print(f"Jaccard Score = {jaccard}")
+        logger.info(f"Jaccard Score = {jaccard}")
         model_path = config.MODELS_OUTPUT_DIR + f"model_{fold}.bin"
         es(jaccard, model, model_path=model_path)
         if es.early_stop:
-            print("Early stopping")
+            logger.info("Early stopping")
             break
 
     model = model.cpu()
