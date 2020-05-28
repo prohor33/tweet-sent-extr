@@ -5,14 +5,14 @@ from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 import torch
 from main.dataloader import TweetDataset
-from main.utils import set_seed, FoldsScore, run_fold, calculate_jaccard_score
+from main.train import run_fold
+from main.utils import set_seed, FoldsScore, calculate_jaccard_score
 from datetime import datetime
 import argparse
 from models.roberta import TweetModel
 
 
 class Config:
-
     MAX_LEN = 128
     TRAIN_BATCH_SIZE = 64
     VALID_BATCH_SIZE = 16
@@ -23,6 +23,7 @@ class Config:
     MODELS_OUTPUT_DIR = "/home/prohor/Documents/Code/kaggle/tweet-sent-extr/models/current_2/"
     TOKENIZER = transformers.RobertaTokenizerFast.from_pretrained(BERT_PATH, add_prefix_space=True)
     DEVICE = 'cuda:0'
+    DEBUG = True
 
 
 def main(config: Config):
@@ -32,13 +33,13 @@ def main(config: Config):
     version = 'roberta_1.2'
     dt_string = now.strftime("%d_%m_%Y__%H_%M_%S") + '_' + version
 
-    writer = SummaryWriter(log_dir=f"/home/prohor/Documents/Code/kaggle/tweet-sent-extr/runs/{dt_string}")
+    writer = SummaryWriter(log_dir=f"/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/runs/{dt_string}")
     writer.add_text('model_version_info', version, 0)
 
     folds_score = FoldsScore()
 
     for fold_i in range(5):
-        run_fold(fold=fold_i)
+        run_fold(fold_i, writer, config, folds_score)
 
     print(f'Mean jaccard across all folds: {folds_score.mean()}')
     writer.add_text('folds_jaccard', f'mean jaccard across all folds: {folds_score.mean()}')
@@ -82,7 +83,8 @@ def main(config: Config):
     test_dataset = TweetDataset(
         tweet=df_test.text.values,
         sentiment=df_test.sentiment.values,
-        selected_text=df_test.selected_text.values
+        selected_text=df_test.selected_text.values,
+        config=config
     )
 
     data_loader = torch.utils.data.DataLoader(
@@ -184,9 +186,9 @@ def main(config: Config):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Create a ArcHydro schema')
-    parser.add_argument('--device', metavar='path', required=False,
-                        help='the path to workspace')
+    parser = argparse.ArgumentParser(description='Run ml')
+    parser.add_argument('--device', metavar='device', required=False,
+                        help='device', default='cuda:0')
     args = parser.parse_args()
 
     config = Config()

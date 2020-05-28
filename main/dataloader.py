@@ -1,3 +1,6 @@
+import logging
+from main.utils import replace_non_ascii
+import torch
 
 
 def process_data(tweet, selected_text, sentiment, tokenizer, max_len):
@@ -74,7 +77,7 @@ def process_data(tweet, selected_text, sentiment, tokenizer, max_len):
 
 
 class TweetDataset:
-    def __init__(self, tweet, sentiment, selected_text):
+    def __init__(self, tweet, sentiment, selected_text, config):
         self.tweet = tweet
         self.sentiment = sentiment
         self.selected_text = selected_text
