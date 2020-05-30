@@ -16,18 +16,19 @@ import logging
 class Config:
     MAX_LEN = 128
     TRAIN_BATCH_SIZE = 64
+    # TRAIN_BATCH_SIZE = 8
     VALID_BATCH_SIZE = 16
     EPOCHS = 10
-    VERSION = 'roberta-base-squad2_1.0'
-    # BERT_PATH = "roberta-base"
-    BERT_PATH = "deepset/roberta-base-squad2"
+    VERSION = 'roberta-base-1.1'
+    BERT_PATH = "roberta-base"
+    # BERT_PATH = "deepset/roberta-base-squad2"
     MODEL_PATH = "model.bin"
     TRAINING_FILE = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train_folds.csv"
     MODELS_OUTPUT_DIR = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/models/current_2/"
     LOGS_DIR = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs/"
     TOKENIZER = transformers.RobertaTokenizerFast.from_pretrained(BERT_PATH, add_prefix_space=True)
     DEVICE = 'cuda:0'
-    DEBUG = True
+    DEBUG = False
 
 
 def main(config: Config):

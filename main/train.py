@@ -71,7 +71,8 @@ def train_fn(data_loader, model, optimizer, device, fold, epoch, scheduler, conf
         losses.update(loss.item(), ids.size(0))
         tk0.set_postfix(loss=losses.avg, jaccard=jaccards.avg)
 
-        it = len(data_loader) * epoch + bi
+        it = float(epoch) + float(bi) / len(data_loader)
+        it *= 1000
         if bi % 50 == 0:
             writer.add_scalar(f'jaccard/train/fold_{fold}', jaccard_score_mean, it)
             writer.add_scalar(f'loss/train/fold_{fold}', loss.item(), it)
