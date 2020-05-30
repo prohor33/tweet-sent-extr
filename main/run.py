@@ -44,9 +44,9 @@ def main(config: Config):
     file_handler = logging.FileHandler(f'{log_dir}/all.log', 'w')
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     file_handler.setFormatter(formatter)
+    logging.getLogger().addHandler(file_handler)
 
     logger = logging.getLogger('main')
-    logger.addHandler(file_handler)
 
     folds_score = FoldsScore()
 

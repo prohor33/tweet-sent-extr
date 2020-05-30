@@ -139,7 +139,7 @@ def eval_fn(data_loader, model, device, fold, epoch, config, writer, logger):
     writer.add_scalar(f'jaccard_avg/valid/fold_{fold}', jaccards.avg, epoch)
     writer.add_scalar(f'loss_avg/valid/fold_{fold}', losses.avg, epoch)
 
-    logger.info(f"Jaccard = {jaccards.avg}")
+    logger.info(f"Jaccard fold {fold}, epoch {epoch}: {jaccards.avg}")
     return jaccards.avg
 
 
@@ -211,12 +211,14 @@ def run_fold(fold, writer, config, folds_score, logger):
         train_fn(train_data_loader, model, optimizer, device, fold, epoch, scheduler, config, writer)
         jaccard = eval_fn(valid_data_loader, model, device, fold, epoch, config, writer, logger)
         folds_score.update(fold, jaccard)
-        logger.info(f"Jaccard Score = {jaccard}")
         model_path = config.MODELS_OUTPUT_DIR + f"model_{fold}.bin"
         es(jaccard, model, model_path=model_path)
         if es.early_stop:
             logger.info("Early stopping")
             break
+    final_jaccard = folds_score.get(fold)
+    writer.add_text('final_jaccard', f'fold: {fold}: {final_jaccard}', fold)
+    logger.info(f"Final jaccard fold {fold}: {final_jaccard}")
 
     model = model.cpu()
     del model

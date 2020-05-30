@@ -112,10 +112,17 @@ def calculate_jaccard_score(
 class FoldsScore:
     def __init__(self):
         self.folds = defaultdict(float)
+        self.logger = logging.getLogger("FoldsScore")
 
     def update(self, fold, score):
         if self.folds[fold] < score:
             self.folds[fold] = score
 
+    def get(self, fold):
+        if fold not in self.folds:
+            self.logger.error(f'No such a fold: {fold}, folds: {self.folds}')
+            return 0.
+        return self.folds[fold]
+
     def mean(self):
-        return np.mean(self.folds.values())
+        return np.mean(list(self.folds.values()))
