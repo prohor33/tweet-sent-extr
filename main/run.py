@@ -15,17 +15,18 @@ import logging
 
 class Config:
     MAX_LEN = 128
-    # TRAIN_BATCH_SIZE = 64
-    TRAIN_BATCH_SIZE = 16
+    TRAIN_BATCH_SIZE = 64
+    # TRAIN_BATCH_SIZE = 16
+
     VALID_BATCH_SIZE = 16
     EPOCHS = 10
-    VERSION = 'roberta-large-squad2-1.0'
-    # BERT_PATH = "roberta-base"
-    BERT_PATH = "ahotrod/roberta_large_squad2"
+    VERSION = 'roberta-base-positive-1.0'
+    BERT_PATH = "roberta-base"
+    # BERT_PATH = "ahotrod/roberta_large_squad2"
     MODEL_PATH = "model.bin"
-    TRAINING_FILE = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train_folds.csv"
-    # TRAINING_FILE = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train.csv"
-    MODELS_OUTPUT_DIR = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/models/current_2/"
+    # TRAINING_FILE = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train_folds.csv"
+    TRAINING_FILE = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/positive_train_folds.csv"
+    MODELS_OUTPUT_DIR = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/models/current_"
     LOGS_DIR = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs/"
     LOGS_DIR_DBG = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs_dbg/"
     TOKENIZER = transformers.RobertaTokenizerFast.from_pretrained(BERT_PATH, add_prefix_space=True)
@@ -39,6 +40,7 @@ def main(config: Config):
     now = datetime.now()
     dt_string = now.strftime("%d_%m_%Y__%H_%M_%S") + '_' + config.VERSION
     log_dir = f"{config.LOGS_DIR_DBG if config.DEBUG else config.LOGS_DIR}{dt_string}"
+    config.MODELS_OUTPUT_DIR = config.MODELS_OUTPUT_DIR + f'{config.DEVICE.split(":")[1]}/'
 
     writer = SummaryWriter(log_dir=log_dir)
     writer.add_text('model_version_info', config.VERSION, 0)
