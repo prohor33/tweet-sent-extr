@@ -1,3 +1,4 @@
+import json
 import logging
 import sys
 from collections import defaultdict
@@ -153,3 +154,7 @@ def get_learning_rate(optimizer):
         lr_scheduled = group['lr']
         lrs.append(lr_scheduled)
     return lrs[0]
+
+
+def dict_beautify_str(obj):
+    return str(json.dumps(obj, indent=2, sort_keys=True) + "\n")

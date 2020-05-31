@@ -148,7 +148,7 @@ def eval_fn(data_loader, model, device, fold, epoch, config, writer, logger):
     return jaccards.avg
 
 
-def run_fold(fold, writer, config, folds_score, logger):
+def run_fold(fold, writer, config, folds_score, tokenizer, logger):
     dfx = pd.read_csv(config.training_file)
 
     df_train = dfx[dfx.kfold != fold].reset_index(drop=True)
@@ -158,6 +158,7 @@ def run_fold(fold, writer, config, folds_score, logger):
         tweet=df_train.text.values,
         sentiment=df_train.sentiment.values,
         selected_text=df_train.selected_text.values,
+        tokenizer=tokenizer,
         config=config
     )
 
@@ -171,6 +172,7 @@ def run_fold(fold, writer, config, folds_score, logger):
         tweet=df_valid.text.values,
         sentiment=df_valid.sentiment.values,
         selected_text=df_valid.selected_text.values,
+        tokenizer=tokenizer,
         config=config
     )
 

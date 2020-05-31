@@ -7,7 +7,7 @@ import numpy as np
 import torch
 from main.dataloader import TweetDataset
 from main.train import run_fold
-from main.utils import set_seed, FoldsScore, calculate_jaccard_score, StreamToLogger
+from main.utils import set_seed, FoldsScore, calculate_jaccard_score, StreamToLogger, dict_beautify_str
 from datetime import datetime
 import argparse
 from models.roberta import TweetModel
@@ -37,7 +37,6 @@ class Config:
         self.models_output_dir = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/models/current_"
         self.logs_dir = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs/"
         self.logs_dir_dbg = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs_dbg/"
-        self.tokenizer = transformers.RobertaTokenizerFast.from_pretrained(self.bert_path, add_prefix_space=True)
         self.device = device
         self.debug = debug
 
@@ -64,15 +63,17 @@ def main(config: Config):
     sys.stdout = StreamToLogger(stdout_logger, logging.INFO)
     stderr_logger = logging.getLogger('stderr')
     sys.stderr = StreamToLogger(stderr_logger, logging.INFO)
-
     logger = logging.getLogger('main')
+    if config.debug:
+        config.epochs = 2
 
-    logger.info(f'Config: {config.__dict__}')
+    logger.info(f'Config: {dict_beautify_str(config.__dict__)}')
 
+    tokenizer = transformers.RobertaTokenizerFast.from_pretrained(config.bert_path, add_prefix_space=True)
     folds_score = FoldsScore()
 
     for fold_i in range(5):
-        run_fold(fold_i, writer, config, folds_score, logger)
+        run_fold(fold_i, writer, config, folds_score, tokenizer, logger)
 
     logger.info(f'Mean jaccard across all folds: {folds_score.mean()}')
     writer.add_text('folds_jaccard', f'mean jaccard across all folds: {folds_score.mean()}')
@@ -117,6 +118,7 @@ def main(config: Config):
         tweet=df_test.text.values,
         sentiment=df_test.sentiment.values,
         selected_text=df_test.selected_text.values,
+        tokenizer=tokenizer,
         config=config
     )
 

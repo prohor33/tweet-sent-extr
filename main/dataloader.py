@@ -77,11 +77,11 @@ def process_data(tweet, selected_text, sentiment, tokenizer, max_len):
 
 
 class TweetDataset:
-    def __init__(self, tweet, sentiment, selected_text, config):
+    def __init__(self, tweet, sentiment, selected_text, tokenizer, config):
         self.tweet = tweet
         self.sentiment = sentiment
         self.selected_text = selected_text
-        self.tokenizer = config.tokenizer
+        self.tokenizer = tokenizer
         self.max_len = config.max_len
 
     def __len__(self):
