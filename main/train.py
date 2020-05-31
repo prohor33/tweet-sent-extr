@@ -19,6 +19,7 @@ def train_fn(data_loader, model, optimizer, device, fold, epoch, scheduler, conf
 
     writer.add_text('current_fold_epoch', f'fold: {fold}, epoch: {epoch}', fold)
     tk0 = tqdm(data_loader, total=len(data_loader))
+    last_write_it = -1
 
     for bi, d in enumerate(tk0):
 
@@ -74,11 +75,12 @@ def train_fn(data_loader, model, optimizer, device, fold, epoch, scheduler, conf
 
         it = float(epoch) + float(bi) / len(data_loader)
         it *= 1000
-        if bi % 50 == 0:
+        if last_write_it == -1 or (it - last_write_it) > 10:
             writer.add_scalar(f'jaccard/train/fold_{fold}', jaccard_score_mean, it)
             writer.add_scalar(f'loss/train/fold_{fold}', loss.item(), it)
             writer.add_scalar(f'jaccard_avg/train/fold_{fold}', jaccards.avg, it)
             writer.add_scalar(f'loss_avg/train/fold_{fold}', losses.avg, it)
+            last_write_it = it
 
         if config.DEBUG and bi > 2:
             break

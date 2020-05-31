@@ -1,3 +1,4 @@
+import traceback
 import pandas as pd
 import transformers
 from tqdm.autonotebook import tqdm
@@ -6,11 +7,12 @@ import numpy as np
 import torch
 from main.dataloader import TweetDataset
 from main.train import run_fold
-from main.utils import set_seed, FoldsScore, calculate_jaccard_score
+from main.utils import set_seed, FoldsScore, calculate_jaccard_score, StreamToLogger
 from datetime import datetime
 import argparse
 from models.roberta import TweetModel
 import logging
+import sys
 
 
 class Config:
@@ -25,13 +27,14 @@ class Config:
     # BERT_PATH = "ahotrod/roberta_large_squad2"
     MODEL_PATH = "model.bin"
     # TRAINING_FILE = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train_folds.csv"
-    TRAINING_FILE = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/positive_train_folds.csv"
+    TRAINING_FILE = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset" \
+                    "/positive_train_folds_no_prep.csv"
     MODELS_OUTPUT_DIR = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/models/current_"
     LOGS_DIR = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs/"
     LOGS_DIR_DBG = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs_dbg/"
     TOKENIZER = transformers.RobertaTokenizerFast.from_pretrained(BERT_PATH, add_prefix_space=True)
     DEVICE = 'cuda:0'
-    DEBUG = True
+    DEBUG = False
 
 
 def main(config: Config):
@@ -40,7 +43,8 @@ def main(config: Config):
     now = datetime.now()
     dt_string = now.strftime("%d_%m_%Y__%H_%M_%S") + '_' + config.VERSION
     log_dir = f"{config.LOGS_DIR_DBG if config.DEBUG else config.LOGS_DIR}{dt_string}"
-    config.MODELS_OUTPUT_DIR = config.MODELS_OUTPUT_DIR + f'{config.DEVICE.split(":")[1]}/'
+    output_model_repo_num = '2' if config.DEVICE == 'cpu' else config.DEVICE.split(":")[1]
+    config.MODELS_OUTPUT_DIR = config.MODELS_OUTPUT_DIR + f'{output_model_repo_num}/'
 
     writer = SummaryWriter(log_dir=log_dir)
     writer.add_text('model_version_info', config.VERSION, 0)
@@ -50,8 +54,17 @@ def main(config: Config):
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     file_handler.setFormatter(formatter)
     logging.getLogger().addHandler(file_handler)
+    # stdout_handler = logging.StreamHandler(sys.stdout)
+    # logging.getLogger().addHandler(stdout_handler)
+
+    stdout_logger = logging.getLogger('STDOUT')
+    sys.stdout = StreamToLogger(stdout_logger, logging.INFO)
+    stderr_logger = logging.getLogger('STDERR')
+    sys.stderr = StreamToLogger(stderr_logger, logging.ERROR)
 
     logger = logging.getLogger('main')
+
+    # 1/0
 
     folds_score = FoldsScore()
 
@@ -202,10 +215,33 @@ def main(config: Config):
     sample.head()
 
 
+def extract_function_name():
+    """Extracts failing function name from Traceback
+    by Alex Martelli
+    http://stackoverflow.com/questions/2380073/\
+    how-to-identify-what-function-call-raise-an-exception-in-python
+    """
+    tb = sys.exc_info()[-1]
+    stk = traceback.extract_tb(tb, 1)
+    fname = stk[0][3]
+    return fname
+
+
+def log_exception(e):
+    logging.error(
+        "Function {function_name} raised {exception_class} ({exception_docstring}): {exception_message}".format(
+            function_name=extract_function_name(), #this is optional
+            exception_class=e.__class__,
+            exception_docstring=e.__doc__,
+            exception_message=str(e)
+        )
+    )
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run ml')
     parser.add_argument('--device', metavar='device', required=False,
-                        help='device', default='cuda:0')
+                        help='device', default=Config.DEVICE)
     parser.add_argument('--no-debug', dest='debug', action='store_false')
     parser.set_defaults(debug=Config.DEBUG)
     args = parser.parse_args()
@@ -213,4 +249,8 @@ if __name__ == "__main__":
     config = Config()
     config.DEVICE = args.device
     config.DEBUG = args.debug
+
+    # try:
     main(config)
+    # except Exception as e:
+    #     log_exception(e)
