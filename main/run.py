@@ -15,20 +15,22 @@ import logging
 
 class Config:
     MAX_LEN = 128
-    TRAIN_BATCH_SIZE = 64
-    # TRAIN_BATCH_SIZE = 8
+    # TRAIN_BATCH_SIZE = 64
+    TRAIN_BATCH_SIZE = 16
     VALID_BATCH_SIZE = 16
     EPOCHS = 10
-    VERSION = 'roberta-base-1.1'
-    BERT_PATH = "roberta-base"
-    # BERT_PATH = "deepset/roberta-base-squad2"
+    VERSION = 'roberta-large-squad2-1.0'
+    # BERT_PATH = "roberta-base"
+    BERT_PATH = "ahotrod/roberta_large_squad2"
     MODEL_PATH = "model.bin"
     TRAINING_FILE = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train_folds.csv"
+    # TRAINING_FILE = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train.csv"
     MODELS_OUTPUT_DIR = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/models/current_2/"
     LOGS_DIR = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs/"
+    LOGS_DIR_DBG = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs_dbg/"
     TOKENIZER = transformers.RobertaTokenizerFast.from_pretrained(BERT_PATH, add_prefix_space=True)
     DEVICE = 'cuda:0'
-    DEBUG = False
+    DEBUG = True
 
 
 def main(config: Config):
@@ -36,7 +38,7 @@ def main(config: Config):
 
     now = datetime.now()
     dt_string = now.strftime("%d_%m_%Y__%H_%M_%S") + '_' + config.VERSION
-    log_dir = f"{config.LOGS_DIR}{dt_string}"
+    log_dir = f"{config.LOGS_DIR_DBG if config.DEBUG else config.LOGS_DIR}{dt_string}"
 
     writer = SummaryWriter(log_dir=log_dir)
     writer.add_text('model_version_info', config.VERSION, 0)
@@ -66,27 +68,27 @@ def main(config: Config):
     model_config = transformers.BertConfig.from_pretrained(Config.BERT_PATH)
     model_config.output_hidden_states = True
 
-    model1 = TweetModel(conf=model_config)
+    model1 = TweetModel(conf=model_config, global_conf=config)
     model1.to(device)
     model1.load_state_dict(torch.load("model_0.bin"))
     model1.eval()
 
-    model2 = TweetModel(conf=model_config)
+    model2 = TweetModel(conf=model_config, global_conf=config)
     model2.to(device)
     model2.load_state_dict(torch.load("model_1.bin"))
     model2.eval()
 
-    model3 = TweetModel(conf=model_config)
+    model3 = TweetModel(conf=model_config, global_conf=config)
     model3.to(device)
     model3.load_state_dict(torch.load("model_2.bin"))
     model3.eval()
 
-    model4 = TweetModel(conf=model_config)
+    model4 = TweetModel(conf=model_config, global_conf=config)
     model4.to(device)
     model4.load_state_dict(torch.load("model_3.bin"))
     model4.eval()
 
-    model5 = TweetModel(conf=model_config)
+    model5 = TweetModel(conf=model_config, global_conf=config)
     model5.to(device)
     model5.load_state_dict(torch.load("model_4.bin"))
     model5.eval()

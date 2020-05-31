@@ -1,3 +1,4 @@
+import transformers
 from transformers import RobertaConfig, get_linear_schedule_with_warmup
 from transformers import AdamW, RobertaConfig, BertConfig
 from main.dataloader import TweetDataset
@@ -187,7 +188,8 @@ def run_fold(fold, writer, config, folds_score, logger):
 
     device = torch.device(config.DEVICE) if torch.cuda.is_available() else "cpu"
     logger.info(f'device: {device}')
-    model_config = RobertaConfig()
+    model_config = transformers.RobertaConfig.from_pretrained(config.BERT_PATH)
+    model_config.output_hidden_states = True
     model = TweetModel(bert_conf=model_config, global_conf=config)
     model.to(device)
 
