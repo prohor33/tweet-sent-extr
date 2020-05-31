@@ -22,19 +22,20 @@ class Config:
 
     VALID_BATCH_SIZE = 16
     EPOCHS = 10
-    VERSION = 'roberta-base-positive-1.0'
+    VERSION = 'roberta-base-1.2'
     BERT_PATH = "roberta-base"
     # BERT_PATH = "ahotrod/roberta_large_squad2"
     MODEL_PATH = "model.bin"
-    # TRAINING_FILE = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train_folds.csv"
-    TRAINING_FILE = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset" \
-                    "/positive_train_folds_no_prep.csv"
+    TRAINING_FILE = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train_folds.csv"
+    # TRAINING_FILE = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset" \
+    #                 "/positive_train_folds_no_prep.csv"
     MODELS_OUTPUT_DIR = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/models/current_"
     LOGS_DIR = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs/"
     LOGS_DIR_DBG = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs_dbg/"
     TOKENIZER = transformers.RobertaTokenizerFast.from_pretrained(BERT_PATH, add_prefix_space=True)
     DEVICE = 'cuda:0'
-    DEBUG = False
+    # DEVICE = 'cpu'
+    DEBUG = True
 
 
 def main(config: Config):
@@ -54,17 +55,13 @@ def main(config: Config):
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     file_handler.setFormatter(formatter)
     logging.getLogger().addHandler(file_handler)
-    # stdout_handler = logging.StreamHandler(sys.stdout)
-    # logging.getLogger().addHandler(stdout_handler)
 
-    stdout_logger = logging.getLogger('STDOUT')
+    stdout_logger = logging.getLogger('stdout')
     sys.stdout = StreamToLogger(stdout_logger, logging.INFO)
-    stderr_logger = logging.getLogger('STDERR')
-    sys.stderr = StreamToLogger(stderr_logger, logging.ERROR)
+    stderr_logger = logging.getLogger('stderr')
+    sys.stderr = StreamToLogger(stderr_logger, logging.INFO)
 
     logger = logging.getLogger('main')
-
-    # 1/0
 
     folds_score = FoldsScore()
 

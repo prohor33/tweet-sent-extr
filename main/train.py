@@ -2,7 +2,7 @@ import transformers
 from transformers import RobertaConfig, get_linear_schedule_with_warmup
 from transformers import AdamW, RobertaConfig, BertConfig
 from main.dataloader import TweetDataset
-from main.utils import AverageMeter, calculate_jaccard_score, EarlyStopping
+from main.utils import AverageMeter, calculate_jaccard_score, EarlyStopping, get_learning_rate
 from tqdm.autonotebook import tqdm
 import torch
 import numpy as np
@@ -80,6 +80,7 @@ def train_fn(data_loader, model, optimizer, device, fold, epoch, scheduler, conf
             writer.add_scalar(f'loss/train/fold_{fold}', loss.item(), it)
             writer.add_scalar(f'jaccard_avg/train/fold_{fold}', jaccards.avg, it)
             writer.add_scalar(f'loss_avg/train/fold_{fold}', losses.avg, it)
+            writer.add_scalar(f'learning_rate/fold_{fold}', get_learning_rate(optimizer), it)
             last_write_it = it
 
         if config.DEBUG and bi > 2:
@@ -205,7 +206,7 @@ def run_fold(fold, writer, config, folds_score, logger):
     optimizer = AdamW(optimizer_parameters, lr=3e-5)
     scheduler = get_linear_schedule_with_warmup(
         optimizer,
-        num_warmup_steps=0,
+        num_warmup_steps=100,
         num_training_steps=num_train_steps
     )
 

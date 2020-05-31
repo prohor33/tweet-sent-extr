@@ -145,3 +145,11 @@ class StreamToLogger(object):
 
     def flush(self):
         pass
+
+
+def get_learning_rate(optimizer):
+    lrs = []
+    for group in optimizer.param_groups:
+        lr_scheduled = group['lr']
+        lrs.append(lr_scheduled)
+    return lrs[0]
