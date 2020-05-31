@@ -16,39 +16,43 @@ import sys
 
 
 class Config:
-    MAX_LEN = 128
-    TRAIN_BATCH_SIZE = 64
-    # TRAIN_BATCH_SIZE = 16
-
-    VALID_BATCH_SIZE = 16
-    EPOCHS = 10
-    VERSION = 'roberta-base-1.2'
-    BERT_PATH = "roberta-base"
-    # BERT_PATH = "ahotrod/roberta_large_squad2"
-    MODEL_PATH = "model.bin"
-    TRAINING_FILE = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train_folds.csv"
-    # TRAINING_FILE = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset" \
-    #                 "/positive_train_folds_no_prep.csv"
-    MODELS_OUTPUT_DIR = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/models/current_"
-    LOGS_DIR = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs/"
-    LOGS_DIR_DBG = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs_dbg/"
-    TOKENIZER = transformers.RobertaTokenizerFast.from_pretrained(BERT_PATH, add_prefix_space=True)
-    DEVICE = 'cuda:0'
-    # DEVICE = 'cpu'
-    DEBUG = True
+    def __init__(self,
+                 version='roberta-base-squad2-1.1',
+                 device='cuda:0',
+                 debug=True
+                 ):
+        self.max_len = 128
+        self.train_batch_size = 64
+        self.valid_batch_size = 16
+        self.epochs = 10
+        self.version = version
+        # self.bert_path = "roberta-base"
+        self.bert_path = "deepset/roberta-base-squad2"
+        self.model_path = "model.bin"
+        # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train_folds.csv"
+        # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset" \
+        #                 "/positive_train_folds_no_prep.csv"
+        self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/" \
+                             "storage/dataset/train_folds_no_prep.csv"
+        self.models_output_dir = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/models/current_"
+        self.logs_dir = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs/"
+        self.logs_dir_dbg = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs_dbg/"
+        self.tokenizer = transformers.RobertaTokenizerFast.from_pretrained(self.bert_path, add_prefix_space=True)
+        self.device = device
+        self.debug = debug
 
 
 def main(config: Config):
     set_seed(1)
 
     now = datetime.now()
-    dt_string = now.strftime("%d_%m_%Y__%H_%M_%S") + '_' + config.VERSION
-    log_dir = f"{config.LOGS_DIR_DBG if config.DEBUG else config.LOGS_DIR}{dt_string}"
-    output_model_repo_num = '2' if config.DEVICE == 'cpu' else config.DEVICE.split(":")[1]
-    config.MODELS_OUTPUT_DIR = config.MODELS_OUTPUT_DIR + f'{output_model_repo_num}/'
+    dt_string = now.strftime("%d_%m_%Y__%H_%M_%S") + '_' + config.version
+    log_dir = f"{config.logs_dir_dbg if config.debug else config.logs_dir}{dt_string}"
+    output_model_repo_num = '2' if config.device == 'cpu' else config.device.split(":")[1]
+    config.models_output_dir = config.models_output_dir + f'{output_model_repo_num}/'
 
     writer = SummaryWriter(log_dir=log_dir)
-    writer.add_text('model_version_info', config.VERSION, 0)
+    writer.add_text('model_version_info', config.version, 0)
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
     file_handler = logging.FileHandler(f'{log_dir}/all.log', 'w')
@@ -62,6 +66,8 @@ def main(config: Config):
     sys.stderr = StreamToLogger(stderr_logger, logging.INFO)
 
     logger = logging.getLogger('main')
+
+    logger.info(f'Config: {config.__dict__}')
 
     folds_score = FoldsScore()
 
@@ -77,7 +83,7 @@ def main(config: Config):
     df_test.loc[:, "selected_text"] = df_test.text.values
 
     device = torch.device("cuda")
-    model_config = transformers.BertConfig.from_pretrained(Config.BERT_PATH)
+    model_config = transformers.BertConfig.from_pretrained(Config.bert_path)
     model_config.output_hidden_states = True
 
     model1 = TweetModel(conf=model_config, global_conf=config)
@@ -117,7 +123,7 @@ def main(config: Config):
     data_loader = torch.utils.data.DataLoader(
         test_dataset,
         shuffle=False,
-        batch_size=Config.VALID_BATCH_SIZE,
+        batch_size=Config.valid_batch_size,
         num_workers=1
     )
 
@@ -236,18 +242,15 @@ def log_exception(e):
 
 
 if __name__ == "__main__":
+    config = Config()
+
     parser = argparse.ArgumentParser(description='Run ml')
     parser.add_argument('--device', metavar='device', required=False,
-                        help='device', default=Config.DEVICE)
+                        help='device', default=config.device)
     parser.add_argument('--no-debug', dest='debug', action='store_false')
-    parser.set_defaults(debug=Config.DEBUG)
+    parser.set_defaults(debug=config.debug)
     args = parser.parse_args()
+    config.device = args.device
+    config.debug = args.debug
 
-    config = Config()
-    config.DEVICE = args.device
-    config.DEBUG = args.debug
-
-    # try:
     main(config)
-    # except Exception as e:
-    #     log_exception(e)

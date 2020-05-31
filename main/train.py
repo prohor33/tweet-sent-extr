@@ -83,7 +83,7 @@ def train_fn(data_loader, model, optimizer, device, fold, epoch, scheduler, conf
             writer.add_scalar(f'learning_rate/fold_{fold}', get_learning_rate(optimizer), it)
             last_write_it = it
 
-        if config.DEBUG and bi > 2:
+        if config.debug and bi > 2:
             break
 
 
@@ -138,7 +138,7 @@ def eval_fn(data_loader, model, device, fold, epoch, config, writer, logger):
             losses.update(loss.item(), ids.size(0))
             tk0.set_postfix(loss=losses.avg, jaccard=jaccards.avg)
 
-            if config.DEBUG and bi > 2:
+            if config.debug and bi > 2:
                 break
 
     writer.add_scalar(f'jaccard_avg/valid/fold_{fold}', jaccards.avg, epoch)
@@ -149,7 +149,7 @@ def eval_fn(data_loader, model, device, fold, epoch, config, writer, logger):
 
 
 def run_fold(fold, writer, config, folds_score, logger):
-    dfx = pd.read_csv(config.TRAINING_FILE)
+    dfx = pd.read_csv(config.training_file)
 
     df_train = dfx[dfx.kfold != fold].reset_index(drop=True)
     df_valid = dfx[dfx.kfold == fold].reset_index(drop=True)
@@ -163,7 +163,7 @@ def run_fold(fold, writer, config, folds_score, logger):
 
     train_data_loader = torch.utils.data.DataLoader(
         train_dataset,
-        batch_size=config.TRAIN_BATCH_SIZE,
+        batch_size=config.train_batch_size,
         num_workers=4
     )
 
@@ -176,7 +176,7 @@ def run_fold(fold, writer, config, folds_score, logger):
 
     valid_data_loader = torch.utils.data.DataLoader(
         valid_dataset,
-        batch_size=config.VALID_BATCH_SIZE,
+        batch_size=config.valid_batch_size,
         num_workers=2
     )
 
@@ -189,14 +189,16 @@ def run_fold(fold, writer, config, folds_score, logger):
     #       pass
     #     logger.info('both ok')
 
-    device = torch.device(config.DEVICE) if torch.cuda.is_available() else "cpu"
+    device = torch.device(config.device) if torch.cuda.is_available() else "cpu"
     logger.info(f'device: {device}')
-    model_config = transformers.RobertaConfig.from_pretrained(config.BERT_PATH)
+    model_config = transformers.RobertaConfig.from_pretrained(config.bert_path)
     model_config.output_hidden_states = True
     model = TweetModel(bert_conf=model_config, global_conf=config)
     model.to(device)
 
-    num_train_steps = int(len(df_train) / config.TRAIN_BATCH_SIZE * config.EPOCHS)
+    num_train_steps = int(len(df_train) / config.train_batch_size * config.epochs)
+    num_warmup_steps = int(len(df_train) / config.train_batch_size / 4)
+    logger.info(f'num_warmup_steps: {num_warmup_steps}')
     param_optimizer = list(model.named_parameters())
     no_decay = ["bias", "LayerNorm.bias", "LayerNorm.weight"]
     optimizer_parameters = [
@@ -206,18 +208,18 @@ def run_fold(fold, writer, config, folds_score, logger):
     optimizer = AdamW(optimizer_parameters, lr=3e-5)
     scheduler = get_linear_schedule_with_warmup(
         optimizer,
-        num_warmup_steps=100,
+        num_warmup_steps=num_warmup_steps,
         num_training_steps=num_train_steps
     )
 
     es = EarlyStopping(patience=2, mode="max")
     logger.info(f"Training is Starting for fold={fold}")
 
-    for epoch in range(config.EPOCHS):
+    for epoch in range(config.epochs):
         train_fn(train_data_loader, model, optimizer, device, fold, epoch, scheduler, config, writer)
         jaccard = eval_fn(valid_data_loader, model, device, fold, epoch, config, writer, logger)
         folds_score.update(fold, jaccard)
-        model_path = config.MODELS_OUTPUT_DIR + f"model_{fold}.bin"
+        model_path = config.models_output_dir + f"model_{fold}.bin"
         es(jaccard, model, model_path=model_path)
         if es.early_stop:
             logger.info("Early stopping")

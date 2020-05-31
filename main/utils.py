@@ -35,7 +35,7 @@ class AverageMeter:
 
 
 class EarlyStopping:
-    def __init__(self, patience=7, mode="max", delta=0.001):
+    def __init__(self, patience=7, mode="max", delta=0.0002):
         self.patience = patience
         self.counter = 0
         self.mode = mode
