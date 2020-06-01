@@ -1,8 +1,10 @@
+from collections import defaultdict
+
 import transformers
 from transformers import RobertaConfig, get_linear_schedule_with_warmup
 from transformers import AdamW, RobertaConfig, BertConfig
 from main.dataloader import TweetDataset
-from main.utils import AverageMeter, calculate_jaccard_score, EarlyStopping, get_learning_rate
+from main.utils import AverageMeter, calculate_jaccard_score, EarlyStopping, get_learning_rate, dict_beautify_str
 from tqdm.autonotebook import tqdm
 import torch
 import numpy as np
@@ -90,7 +92,7 @@ def train_fn(data_loader, model, optimizer, device, fold, epoch, scheduler, conf
 def eval_fn(data_loader, model, device, fold, epoch, config, writer, logger):
     model.eval()
     losses = AverageMeter()
-    jaccards = AverageMeter()
+    jaccards = defaultdict(AverageMeter)
 
     with torch.no_grad():
         tk0 = tqdm(data_loader, total=len(data_loader))
@@ -119,7 +121,7 @@ def eval_fn(data_loader, model, device, fold, epoch, config, writer, logger):
             loss = loss_fn(outputs_start, outputs_end, targets_start, targets_end)
             outputs_start = torch.softmax(outputs_start, dim=1).cpu().detach().numpy()
             outputs_end = torch.softmax(outputs_end, dim=1).cpu().detach().numpy()
-            jaccard_scores = []
+            jaccard_scores = defaultdict(list)
             for px, tweet in enumerate(orig_tweet):
                 selected_tweet = orig_selected[px]
                 tweet_sentiment = sentiment[px]
@@ -131,21 +133,25 @@ def eval_fn(data_loader, model, device, fold, epoch, config, writer, logger):
                     idx_end=np.argmax(outputs_end[px, :]),
                     offsets=offsets[px]
                 )
-                jaccard_scores.append(jaccard_score)
+                jaccard_scores[tweet_sentiment].append(jaccard_score)
+                jaccard_scores['all'].append(jaccard_score)
 
-            jaccard_score_mean = np.mean(jaccard_scores)
-            jaccards.update(jaccard_score_mean, ids.size(0))
+            for key, value in jaccard_scores.items():
+                jaccards[key].update(np.mean(jaccard_scores[key]), len(jaccard_scores[key]))
             losses.update(loss.item(), ids.size(0))
-            tk0.set_postfix(loss=losses.avg, jaccard=jaccards.avg)
+            tk0.set_postfix(loss=losses.avg, jaccard=jaccards['all'].avg)
 
-            if config.debug and bi > 2:
+            if config.debug and not config.eval and bi > 2:
                 break
 
-    writer.add_scalar(f'jaccard_avg/valid/fold_{fold}', jaccards.avg, epoch)
+    writer.add_scalar(f'jaccard_avg/valid/fold_{fold}', jaccards['all'].avg, epoch)
     writer.add_scalar(f'loss_avg/valid/fold_{fold}', losses.avg, epoch)
 
-    logger.info(f"Jaccard fold {fold}, epoch {epoch}: {jaccards.avg}")
-    return jaccards.avg
+    jaccards_avg = {}
+    for key, value in jaccards.items():
+        jaccards_avg[key] = value.avg
+    logger.info(f"Jaccard fold {fold}, epoch {epoch}\n: {dict_beautify_str(jaccards_avg)}")
+    return jaccards_avg
 
 
 def run_fold(fold, writer, config, folds_score, tokenizer, logger):
@@ -218,17 +224,25 @@ def run_fold(fold, writer, config, folds_score, tokenizer, logger):
     logger.info(f"Training is Starting for fold={fold}")
 
     for epoch in range(config.epochs):
-        train_fn(train_data_loader, model, optimizer, device, fold, epoch, scheduler, config, writer)
-        jaccard = eval_fn(valid_data_loader, model, device, fold, epoch, config, writer, logger)
-        folds_score.update(fold, jaccard)
+        if config.eval:
+            model_path = config.eval_model_path + f"/model_{fold}.bin"
+            logger.info(f'Loading weights from: {model_path}')
+            model.load_state_dict(torch.load(model_path))
+            logger.info(f'Loaded')
+        else:
+            train_fn(train_data_loader, model, optimizer, device, fold, epoch, scheduler, config, writer)
+        jaccards = eval_fn(valid_data_loader, model, device, fold, epoch, config, writer, logger)
+        for key, jaccard in jaccards:
+            folds_score[key].update(fold, jaccard)
         model_path = config.models_output_dir + f"model_{fold}.bin"
-        es(jaccard, model, model_path=model_path)
+        es(jaccards['all'], model, model_path=model_path)
         if es.early_stop:
             logger.info("Early stopping")
             break
-    final_jaccard = folds_score.get(fold)
+    final_jaccard = folds_score['all'].get(fold)
     writer.add_text('final_jaccard', f'fold: {fold}: {final_jaccard}', fold)
-    logger.info(f"Final jaccard fold {fold}: {final_jaccard}")
+    for key, value in folds_score:
+        logger.info(f"{key.title()} final jaccard fold {fold}: {value.get(fold)}")
 
     model = model.cpu()
     del model

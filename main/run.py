@@ -1,4 +1,6 @@
 import traceback
+from collections import defaultdict
+
 import pandas as pd
 import transformers
 from tqdm.autonotebook import tqdm
@@ -19,17 +21,19 @@ class Config:
     def __init__(self,
                  version='roberta-base-squad2-1.1',
                  device='cuda:0',
-                 debug=True
+                 debug=True,
+                 eval=True,
+                 eval_model_path='/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/models/roberta-base-1.3'
                  ):
         self.max_len = 128
         self.train_batch_size = 64
         self.valid_batch_size = 16
         self.epochs = 10
         self.version = version
-        # self.bert_path = "roberta-base"
-        self.bert_path = "deepset/roberta-base-squad2"
+        self.bert_path = "roberta-base"
+        # self.bert_path = "deepset/roberta-base-squad2"
         self.model_path = "model.bin"
-        # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train_folds.csv"
+        # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train_folds_thakur.csv"
         # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset" \
         #                 "/positive_train_folds_no_prep.csv"
         self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/" \
@@ -39,6 +43,10 @@ class Config:
         self.logs_dir_dbg = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs_dbg/"
         self.device = device
         self.debug = debug
+        self.eval = eval
+        self.eval_model_path = self.models_output_dir + '0'
+        if eval_model_path:
+            self.eval_model_path = eval_model_path
 
 
 def main(config: Config):
@@ -70,13 +78,16 @@ def main(config: Config):
     logger.info(f'Config: {dict_beautify_str(config.__dict__)}')
 
     tokenizer = transformers.RobertaTokenizerFast.from_pretrained(config.bert_path, add_prefix_space=True)
-    folds_score = FoldsScore()
+    folds_score = defaultdict(FoldsScore)
 
     for fold_i in range(5):
         run_fold(fold_i, writer, config, folds_score, tokenizer, logger)
 
-    logger.info(f'Mean jaccard across all folds: {folds_score.mean()}')
-    writer.add_text('folds_jaccard', f'mean jaccard across all folds: {folds_score.mean()}')
+    for key, value in folds_score:
+        logger.info(f'{value.title()} mean jaccard across all folds: {value.mean()}')
+    writer.add_text('folds_jaccard', f'mean jaccard across all folds: {folds_score["all"].mean()}')
+    logger.info(f'Finished')
+    return
 
     # Do the evaluation on test data
 
