@@ -19,7 +19,7 @@ import sys
 
 class Config:
     def __init__(self,
-                 version='roberta-base-squad2-1.1',
+                 version='roberta-base-1.1',
                  device='cuda:0',
                  debug=True,
                  eval=True,
@@ -83,8 +83,8 @@ def main(config: Config):
     for fold_i in range(5):
         run_fold(fold_i, writer, config, folds_score, tokenizer, logger)
 
-    for key, value in folds_score:
-        logger.info(f'{value.title()} mean jaccard across all folds: {value.mean()}')
+    for key, value in folds_score.items():
+        logger.info(f'{key.title()} mean jaccard across all folds: {value.mean()}')
     writer.add_text('folds_jaccard', f'mean jaccard across all folds: {folds_score["all"].mean()}')
     logger.info(f'Finished')
     return
@@ -261,9 +261,12 @@ if __name__ == "__main__":
     parser.add_argument('--device', metavar='device', required=False,
                         help='device', default=config.device)
     parser.add_argument('--no-debug', dest='debug', action='store_false')
+    parser.add_argument('--eval', dest='eval', action='store_true')
     parser.set_defaults(debug=config.debug)
+    parser.set_defaults(eval=config.eval)
     args = parser.parse_args()
     config.device = args.device
     config.debug = args.debug
+    config.eval = args.eval
 
     main(config)

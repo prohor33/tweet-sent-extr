@@ -227,13 +227,15 @@ def run_fold(fold, writer, config, folds_score, tokenizer, logger):
         if config.eval:
             model_path = config.eval_model_path + f"/model_{fold}.bin"
             logger.info(f'Loading weights from: {model_path}')
-            model.load_state_dict(torch.load(model_path))
+            model.load_state_dict(torch.load(model_path, map_location=config.device))
             logger.info(f'Loaded')
         else:
             train_fn(train_data_loader, model, optimizer, device, fold, epoch, scheduler, config, writer)
         jaccards = eval_fn(valid_data_loader, model, device, fold, epoch, config, writer, logger)
-        for key, jaccard in jaccards:
+        for key, jaccard in jaccards.items():
             folds_score[key].update(fold, jaccard)
+        if config.eval:
+            break
         model_path = config.models_output_dir + f"model_{fold}.bin"
         es(jaccards['all'], model, model_path=model_path)
         if es.early_stop:
@@ -241,7 +243,7 @@ def run_fold(fold, writer, config, folds_score, tokenizer, logger):
             break
     final_jaccard = folds_score['all'].get(fold)
     writer.add_text('final_jaccard', f'fold: {fold}: {final_jaccard}', fold)
-    for key, value in folds_score:
+    for key, value in folds_score.items():
         logger.info(f"{key.title()} final jaccard fold {fold}: {value.get(fold)}")
 
     model = model.cpu()
