@@ -19,7 +19,7 @@ import sys
 
 class Config:
     def __init__(self,
-                 version='roberta-base-1.4',
+                 version='roberta-base-pos-neg-1.0',
                  device='cuda:0',
                  debug=True,
                  eval=False,
@@ -33,11 +33,14 @@ class Config:
         self.bert_path = "roberta-base"
         # self.bert_path = "deepset/roberta-base-squad2"
         self.model_path = "model.bin"
-        self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train_folds_thakur.csv"
+        # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train_folds_thakur.csv"
         # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset" \
         #                 "/positive_train_folds_no_prep.csv"
         # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/" \
         #                      "storage/dataset/train_folds_no_prep.csv"
+        self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/" \
+                             "dataset/train_folds_pos_and_neg_no_prep.csv"
+
         self.models_output_dir = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/models/current_"
         self.logs_dir = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs/"
         self.logs_dir_dbg = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs_dbg/"
