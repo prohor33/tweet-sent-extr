@@ -19,10 +19,10 @@ import sys
 
 class Config:
     def __init__(self,
-                 version='roberta-base-1.1',
+                 version='roberta-base-1.4',
                  device='cuda:0',
                  debug=True,
-                 eval=True,
+                 eval=False,
                  eval_model_path='/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/models/roberta-base-1.3'
                  ):
         self.max_len = 128
@@ -33,11 +33,11 @@ class Config:
         self.bert_path = "roberta-base"
         # self.bert_path = "deepset/roberta-base-squad2"
         self.model_path = "model.bin"
-        # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train_folds_thakur.csv"
+        self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train_folds_thakur.csv"
         # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset" \
         #                 "/positive_train_folds_no_prep.csv"
-        self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/" \
-                             "storage/dataset/train_folds_no_prep.csv"
+        # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/" \
+        #                      "storage/dataset/train_folds_no_prep.csv"
         self.models_output_dir = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/models/current_"
         self.logs_dir = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs/"
         self.logs_dir_dbg = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs_dbg/"
@@ -55,8 +55,7 @@ def main(config: Config):
     now = datetime.now()
     dt_string = now.strftime("%d_%m_%Y__%H_%M_%S") + '_' + config.version
     log_dir = f"{config.logs_dir_dbg if config.debug else config.logs_dir}{dt_string}"
-    output_model_repo_num = '2' if config.device == 'cpu' else config.device.split(":")[1]
-    config.models_output_dir = config.models_output_dir + f'{output_model_repo_num}/'
+    config.models_output_dir = log_dir + '/'
 
     writer = SummaryWriter(log_dir=log_dir)
     writer.add_text('model_version_info', config.version, 0)
