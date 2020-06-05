@@ -1,3 +1,4 @@
+import random
 import traceback
 from collections import defaultdict
 
@@ -19,11 +20,11 @@ import sys
 
 class Config:
     def __init__(self,
-                 version='roberta-base-pos-neg-1.0',
+                 version='roberta-base-1.5',
                  device='cuda:0',
                  debug=True,
                  eval=False,
-                 eval_model_path='/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/models/roberta-base-1.3'
+                 eval_model_path='/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/kaggle_datasets/tweetsentimentextractionmodels'
                  ):
         self.max_len = 128
         self.train_batch_size = 64
@@ -33,13 +34,13 @@ class Config:
         self.bert_path = "roberta-base"
         # self.bert_path = "deepset/roberta-base-squad2"
         self.model_path = "model.bin"
-        # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train_folds_thakur.csv"
+        self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train_folds_thakur.csv"
         # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset" \
         #                 "/positive_train_folds_no_prep.csv"
         # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/" \
         #                      "storage/dataset/train_folds_no_prep.csv"
-        self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/" \
-                             "dataset/train_folds_pos_and_neg_no_prep.csv"
+        # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/" \
+        #                      "dataset/train_folds_pos_and_neg_no_prep.csv"
 
         self.models_output_dir = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/models/current_"
         self.logs_dir = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs/"
@@ -53,10 +54,11 @@ class Config:
 
 
 def main(config: Config):
-    set_seed(1)
+    seed = random.randint(0, 10000)
+    set_seed(seed)
 
     now = datetime.now()
-    dt_string = now.strftime("%d_%m_%Y__%H_%M_%S") + '_' + config.version
+    dt_string = now.strftime("%d_%m_%Y__%H_%M_%S") + '_' + config.version + f'_{seed}'
     log_dir = f"{config.logs_dir_dbg if config.debug else config.logs_dir}{dt_string}"
     config.models_output_dir = log_dir + '/'
 
@@ -77,6 +79,7 @@ def main(config: Config):
     if config.debug:
         config.epochs = 2
 
+    logger.info(f'Seed: {seed}')
     logger.info(f'Config: {dict_beautify_str(config.__dict__)}')
 
     tokenizer = transformers.RobertaTokenizerFast.from_pretrained(config.bert_path, add_prefix_space=True)
