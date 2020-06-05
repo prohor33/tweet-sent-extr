@@ -24,7 +24,8 @@ class Config:
                  device='cuda:0',
                  debug=True,
                  eval=False,
-                 eval_model_path='/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/kaggle_datasets/tweetsentimentextractionmodels'
+                 # eval_model_path='/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/kaggle_datasets/tweetsentimentextractionmodels'
+                 eval_model_path='/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs/03_06_2020__17_32_21_roberta-base-1.5_5256'
                  ):
         self.max_len = 128
         self.train_batch_size = 64
@@ -34,33 +35,36 @@ class Config:
         self.bert_path = "roberta-base"
         # self.bert_path = "deepset/roberta-base-squad2"
         self.model_path = "model.bin"
-        self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train_folds_thakur.csv"
+        self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/" \
+                             "storage/dataset/train_folds_no_prep.csv"
+        # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train_folds_thakur.csv"
         # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset" \
         #                 "/positive_train_folds_no_prep.csv"
-        # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/" \
-        #                      "storage/dataset/train_folds_no_prep.csv"
         # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/" \
         #                      "dataset/train_folds_pos_and_neg_no_prep.csv"
 
-        self.models_output_dir = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/models/current_"
+        self.results_output_dir = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/models/current_"
         self.logs_dir = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs/"
         self.logs_dir_dbg = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs_dbg/"
+        self.log_path = None
         self.device = device
         self.debug = debug
         self.eval = eval
-        self.eval_model_path = self.models_output_dir + '0'
+        self.eval_model_path = self.results_output_dir + '0'
         if eval_model_path:
             self.eval_model_path = eval_model_path
+        self.folds = 5
 
 
 def main(config: Config):
-    seed = random.randint(0, 10000)
+    # seed = random.randint(0, 10000)
+    seed = 0
     set_seed(seed)
 
     now = datetime.now()
     dt_string = now.strftime("%d_%m_%Y__%H_%M_%S") + '_' + config.version + f'_{seed}'
     log_dir = f"{config.logs_dir_dbg if config.debug else config.logs_dir}{dt_string}"
-    config.models_output_dir = log_dir + '/'
+    config.results_output_dir = log_dir + '/'
 
     writer = SummaryWriter(log_dir=log_dir)
     writer.add_text('model_version_info', config.version, 0)
@@ -85,7 +89,7 @@ def main(config: Config):
     tokenizer = transformers.RobertaTokenizerFast.from_pretrained(config.bert_path, add_prefix_space=True)
     folds_score = defaultdict(FoldsScore)
 
-    for fold_i in range(5):
+    for fold_i in range(config.folds):
         run_fold(fold_i, writer, config, folds_score, tokenizer, logger)
 
     for key, value in folds_score.items():

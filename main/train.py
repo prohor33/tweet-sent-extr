@@ -4,7 +4,8 @@ import transformers
 from transformers import RobertaConfig, get_linear_schedule_with_warmup
 from transformers import AdamW, RobertaConfig, BertConfig
 from main.dataloader import TweetDataset
-from main.utils import AverageMeter, calculate_jaccard_score, EarlyStopping, get_learning_rate, dict_beautify_str
+from main.utils import AverageMeter, calculate_jaccard_score, EarlyStopping, get_learning_rate, \
+    dict_beautify_str, FileLogger
 from tqdm.autonotebook import tqdm
 import torch
 import numpy as np
@@ -93,6 +94,11 @@ def eval_fn(data_loader, model, device, fold, epoch, config, writer, logger):
     model.eval()
     losses = AverageMeter()
     jaccards = defaultdict(AverageMeter)
+    calculate_jaccard_score_logger = FileLogger(config.results_output_dir +
+                                                f'calculate_jaccard_score_{fold}.log')
+    calculate_jaccard_score_logger.log(f"target_string_strip,filtered_output_strip,"
+                                       f"jac,filtered_output,sentiment_val,original_tweet,"
+                                       f"idx_start,idx_end,offsets,outputs_start,outputs_end")
 
     with torch.no_grad():
         tk0 = tqdm(data_loader, total=len(data_loader))
@@ -131,7 +137,10 @@ def eval_fn(data_loader, model, device, fold, epoch, config, writer, logger):
                     sentiment_val=tweet_sentiment,
                     idx_start=np.argmax(outputs_start[px, :]),
                     idx_end=np.argmax(outputs_end[px, :]),
-                    offsets=offsets[px]
+                    offsets=offsets[px],
+                    file_logger=calculate_jaccard_score_logger,
+                    outputs_start=outputs_start,
+                    outputs_end=outputs_end
                 )
                 jaccard_scores[tweet_sentiment].append(jaccard_score)
                 jaccard_scores['all'].append(jaccard_score)
@@ -236,7 +245,7 @@ def run_fold(fold, writer, config, folds_score, tokenizer, logger):
             folds_score[key].update(fold, jaccard)
         if config.eval:
             break
-        model_path = config.models_output_dir + f"model_{fold}.bin"
+        model_path = config.results_output_dir + f"model_{fold}.bin"
         es(jaccards['all'], model, model_path=model_path)
         if es.early_stop:
             logger.info("Early stopping")

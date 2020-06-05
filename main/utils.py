@@ -85,6 +85,14 @@ def jaccard(str1, str2):
     return float(len(c)) / (len(a) + len(b) - len(c))
 
 
+class FileLogger:
+    def __init__(self, path):
+        self.file = open(path, 'w')
+
+    def log(self, msg):
+        self.file.write(msg + '\n')
+
+
 def replace_non_ascii(text, mask='?'):
     return ''.join([i if ord(i) < 128 else mask for i in text])
 
@@ -96,7 +104,9 @@ def calculate_jaccard_score(
         idx_start,
         idx_end,
         offsets,
-        verbose=False):
+        file_logger=None,
+        outputs_start=None,
+        outputs_end=None):
     if idx_end < idx_start:
         idx_end = idx_start
 
@@ -108,8 +118,13 @@ def calculate_jaccard_score(
 
     if sentiment_val == "neutral" or len(original_tweet.split()) < 2:
         filtered_output = original_tweet
-
     jac = jaccard(target_string.strip(), filtered_output.strip())
+    
+    if file_logger:
+        file_logger.log(f"{target_string.strip()},{filtered_output.strip()},{jac},{filtered_output},"
+                    f"{sentiment_val},{original_tweet},{idx_start},{idx_end},{offsets},"
+                        f"{outputs_start},{outputs_end}")
+
     return jac, filtered_output
 
 
