@@ -20,7 +20,7 @@ import sys
 
 class Config:
     def __init__(self,
-                 version='roberta-base-1.6',
+                 version='roberta-base-1.7',
                  device='cuda:0',
                  debug=True,
                  eval=False,
@@ -35,9 +35,9 @@ class Config:
         self.bert_path = "roberta-base"
         # self.bert_path = "deepset/roberta-base-squad2"
         self.model_path = "model.bin"
-        # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/" \
-        #                      "storage/dataset/train_folds_no_prep.csv"
-        self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train_folds_thakur.csv"
+        self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/" \
+                             "storage/dataset/train_folds_no_prep.csv"
+        # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train_folds_thakur.csv"
         # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset" \
         #                 "/positive_train_folds_no_prep.csv"
         # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/" \
@@ -54,12 +54,12 @@ class Config:
         if eval_model_path:
             self.eval_model_path = eval_model_path
         self.folds = 5
-        self.verbose = True
+        self.verbose = False
 
 
 def main(config: Config):
-    seed = random.randint(0, 10000)
-    # seed = 0
+    # seed = random.randint(0, 10000)
+    seed = 1
     set_seed(seed)
 
     now = datetime.now()

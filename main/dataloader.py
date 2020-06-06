@@ -1,5 +1,5 @@
 import logging
-from main.utils import replace_non_ascii, FileLogger
+from main.utils import FileLogger
 import torch
 
 
@@ -22,11 +22,8 @@ def process_data(tweet, selected_text, sentiment, tokenizer, max_len, logger_fil
         for ct in range(idx0, idx1 + 1):
             char_targets[ct] = 1
 
-    tweet_replaced = replace_non_ascii(tweet.lower())
-    if tweet.lower() != tweet_replaced:
-        logger_file.log(f"{tweet.lower()},{tweet_replaced}")
     logging.disable(logging.CRITICAL)
-    tok_tweet = tokenizer.encode_plus(tweet_replaced, return_offsets_mapping=True)
+    tok_tweet = tokenizer.encode_plus(tweet.lower(), return_offsets_mapping=True)
     logging.disable(logging.WARNING)
 
     # logger.info(f"tweet: {tweet}, tok_tweet: {tok_tweet}")
