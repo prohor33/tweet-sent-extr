@@ -25,7 +25,7 @@ class Config:
                  debug=True,
                  eval=False,
                  # eval_model_path='/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/kaggle_datasets/tweetsentimentextractionmodels'
-                 eval_model_path='/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs/06_06_2020__02_25_24_roberta-base-1.6_349'
+                 eval_model_path='/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/runs/03_06_2020__17_32_21_roberta-base-1.5_5256'
                  ):
         self.max_len = 128
         self.train_batch_size = 64
@@ -54,7 +54,7 @@ class Config:
         if eval_model_path:
             self.eval_model_path = eval_model_path
         self.folds = 5
-        self.verbose = False
+        self.verbose = True
 
 
 def main(config: Config):
