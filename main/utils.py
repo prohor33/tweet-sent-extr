@@ -86,11 +86,13 @@ def jaccard(str1, str2):
 
 
 class FileLogger:
-    def __init__(self, path):
+    def __init__(self, path, mute):
         self.file = open(path, 'w')
+        self.mute = mute
 
     def log(self, msg):
-        self.file.write(msg + '\n')
+        if not self.mute:
+            self.file.write(msg + '\n')
 
 
 def replace_non_ascii(text, mask='?'):
@@ -121,9 +123,8 @@ def calculate_jaccard_score(
     jac = jaccard(target_string.strip(), filtered_output.strip())
     
     if file_logger:
-        file_logger.log(f"{target_string.strip()},{filtered_output.strip()},{jac},{filtered_output},"
-                    f"{sentiment_val},{original_tweet},{idx_start},{idx_end},{offsets},"
-                        f"{outputs_start},{outputs_end}")
+        file_logger.log(f"\"{target_string.strip()}\",\"{filtered_output.strip()}\",{jac},\"{filtered_output}\","
+                    f"\"{sentiment_val}\",\"{original_tweet}\",{idx_start},{idx_end}")
 
     return jac, filtered_output
 

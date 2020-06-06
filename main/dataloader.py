@@ -1,9 +1,9 @@
 import logging
-from main.utils import replace_non_ascii
+from main.utils import replace_non_ascii, FileLogger
 import torch
 
 
-def process_data(tweet, selected_text, sentiment, tokenizer, max_len):
+def process_data(tweet, selected_text, sentiment, tokenizer, max_len, logger_file):
     tweet = " " + " ".join(str(tweet).split())
     selected_text = " " + " ".join(str(selected_text).split())
 
@@ -22,8 +22,11 @@ def process_data(tweet, selected_text, sentiment, tokenizer, max_len):
         for ct in range(idx0, idx1 + 1):
             char_targets[ct] = 1
 
+    tweet_replaced = replace_non_ascii(tweet.lower())
+    if tweet.lower() != tweet_replaced:
+        logger_file.log(f"{tweet.lower()},{tweet_replaced}")
     logging.disable(logging.CRITICAL)
-    tok_tweet = tokenizer.encode_plus(replace_non_ascii(tweet.lower()), return_offsets_mapping=True)
+    tok_tweet = tokenizer.encode_plus(tweet_replaced, return_offsets_mapping=True)
     logging.disable(logging.WARNING)
 
     # logger.info(f"tweet: {tweet}, tok_tweet: {tok_tweet}")
@@ -71,18 +74,16 @@ def process_data(tweet, selected_text, sentiment, tokenizer, max_len):
     }
 
 
-# # Data loader
-
-# In[11]:
-
-
 class TweetDataset:
-    def __init__(self, tweet, sentiment, selected_text, tokenizer, config):
+    def __init__(self, tweet, sentiment, selected_text, tokenizer, config, fold=-1):
         self.tweet = tweet
         self.sentiment = sentiment
         self.selected_text = selected_text
         self.tokenizer = tokenizer
         self.max_len = config.max_len
+        self.logger_file = FileLogger(config.results_output_dir + f'tweet_dataset_{fold}.log',
+                                      mute=(not config.verbose or not config.eval))
+        self.logger_file.log(f"tweet,tweet_replcaed")
 
     def __len__(self):
         return len(self.tweet)
@@ -93,7 +94,8 @@ class TweetDataset:
             self.selected_text[item],
             self.sentiment[item],
             self.tokenizer,
-            self.max_len
+            self.max_len,
+            self.logger_file
         )
 
         return {
