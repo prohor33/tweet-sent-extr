@@ -20,7 +20,7 @@ import sys
 
 class Config:
     def __init__(self,
-                 version='roberta-base-1.7',
+                 version='roberta-base-1.8',
                  device='cuda:0',
                  debug=True,
                  eval=False,
@@ -35,8 +35,10 @@ class Config:
         self.bert_path = "roberta-base"
         # self.bert_path = "deepset/roberta-base-squad2"
         self.model_path = "model.bin"
-        self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/" \
-                             "storage/dataset/train_folds_no_prep.csv"
+        self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/" \
+                             "dataset/train_v0.csv"
+        # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/" \
+        #                      "storage/dataset/train_folds_no_prep.csv"
         # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset/train_folds_thakur.csv"
         # self.training_file = "/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/storage/dataset" \
         #                 "/positive_train_folds_no_prep.csv"
@@ -54,7 +56,7 @@ class Config:
         if eval_model_path:
             self.eval_model_path = eval_model_path
         self.folds = 5
-        self.verbose = True
+        self.verbose = False
 
 
 def main(config: Config):

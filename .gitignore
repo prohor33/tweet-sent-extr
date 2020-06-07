@@ -5,3 +5,7 @@ models
 storage/*
 .DS_Store
 .idea/*
+
+!storage/dataset
+storage/dataset/*
+!storage/dataset/train_v0.csv
