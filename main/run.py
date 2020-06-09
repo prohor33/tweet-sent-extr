@@ -16,11 +16,12 @@ import argparse
 from models.roberta import TweetModel
 import logging
 import sys
+import os
 
 
 class Config:
     def __init__(self,
-                 version='roberta-base-1.8',
+                 version='roberta-base-1.10',
                  device='cuda:0',
                  debug=True,
                  eval=False,
@@ -57,6 +58,8 @@ class Config:
             self.eval_model_path = eval_model_path
         self.folds = 5
         self.verbose = False
+        self.only_save_model_config = False
+        self.loader_workers = 4
 
 
 def main(config: Config):
@@ -89,7 +92,20 @@ def main(config: Config):
     logger.info(f'Seed: {seed}')
     logger.info(f'Config: {dict_beautify_str(config.__dict__)}')
 
-    tokenizer = transformers.RobertaTokenizerFast.from_pretrained(config.bert_path, add_prefix_space=True)
+    if config.only_save_model_config:
+        # Save configs for eval on kaggle
+        tokenizer = transformers.RobertaTokenizerFast.from_pretrained(config.bert_path, add_prefix_space=True)
+        kaggle_dataset_path = '/home/prohor/Workspace/pycharm_tmp/pycharm_project_597/' \
+                              'storage/kaggle_datasets/tweet-sentiment-extraction-data/roberta-base/'
+        os.system(f'mkdir -p {kaggle_dataset_path}/tokenizer')
+        os.system(f'mkdir -p {kaggle_dataset_path}/model')
+        tokenizer.save_pretrained(kaggle_dataset_path + 'tokenizer')
+        model_config = transformers.RobertaConfig.from_pretrained(config.bert_path)
+        model_config.save_pretrained(kaggle_dataset_path + 'model')
+        return
+
+    tokenizer = transformers.RobertaTokenizerFast.from_pretrained(config.bert_path,
+                                                                  add_prefix_space=True)
     folds_score = defaultdict(FoldsScore)
 
     for fold_i in range(config.folds):

@@ -1,9 +1,9 @@
 import logging
-from main.utils import FileLogger
+from main.utils import FileLogger, replace_non_ascii
 import torch
 
 
-def process_data(tweet, selected_text, sentiment, tokenizer, max_len, logger_file):
+def process_data(tweet, selected_text, sentiment, tokenizer, max_len, config):
     tweet = " " + " ".join(str(tweet).split())
     selected_text = " " + " ".join(str(selected_text).split())
 
@@ -22,8 +22,13 @@ def process_data(tweet, selected_text, sentiment, tokenizer, max_len, logger_fil
         for ct in range(idx0, idx1 + 1):
             char_targets[ct] = 1
 
+    tweet_lower = tweet.lower()
+    tweet_replaced = replace_non_ascii(tweet_lower)
+    if tweet_replaced != tweet_lower and config.verbose:
+        print(f'replaced tweet: {tweet_lower}\nresult tweet:    {tweet_replaced}')
+
     logging.disable(logging.CRITICAL)
-    tok_tweet = tokenizer.encode_plus(tweet.lower(), return_offsets_mapping=True)
+    tok_tweet = tokenizer.encode_plus(tweet_replaced, return_offsets_mapping=True)
     logging.disable(logging.WARNING)
 
     # logger.info(f"tweet: {tweet}, tok_tweet: {tok_tweet}")
@@ -72,15 +77,13 @@ def process_data(tweet, selected_text, sentiment, tokenizer, max_len, logger_fil
 
 
 class TweetDataset:
-    def __init__(self, tweet, sentiment, selected_text, tokenizer, config, fold=-1):
+    def __init__(self, tweet, sentiment, selected_text, tokenizer, config):
         self.tweet = tweet
         self.sentiment = sentiment
         self.selected_text = selected_text
         self.tokenizer = tokenizer
         self.max_len = config.max_len
-        self.logger_file = FileLogger(config.results_output_dir + f'tweet_dataset_{fold}.log',
-                                      mute=(not config.verbose or not config.eval))
-        self.logger_file.log(f"tweet,tweet_replcaed")
+        self.config = config
 
     def __len__(self):
         return len(self.tweet)
@@ -92,7 +95,7 @@ class TweetDataset:
             self.sentiment[item],
             self.tokenizer,
             self.max_len,
-            self.logger_file
+            self.config
         )
 
         return {

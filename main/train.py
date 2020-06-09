@@ -175,14 +175,13 @@ def run_fold(fold, writer, config, folds_score, tokenizer, logger):
         sentiment=df_train.sentiment.values,
         selected_text=df_train.selected_text.values,
         tokenizer=tokenizer,
-        config=config,
-        fold=fold
+        config=config
     )
 
     train_data_loader = torch.utils.data.DataLoader(
         train_dataset,
         batch_size=config.train_batch_size,
-        num_workers=4
+        num_workers=config.loader_workers
     )
 
     valid_dataset = TweetDataset(
@@ -190,14 +189,13 @@ def run_fold(fold, writer, config, folds_score, tokenizer, logger):
         sentiment=df_valid.sentiment.values,
         selected_text=df_valid.selected_text.values,
         tokenizer=tokenizer,
-        config=config,
-        fold=fold
+        config=config
     )
 
     valid_data_loader = torch.utils.data.DataLoader(
         valid_dataset,
         batch_size=config.valid_batch_size,
-        num_workers=2
+        num_workers=config.loader_workers
     )
 
     #     logger.info('testing data preparation')
