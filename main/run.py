@@ -21,7 +21,7 @@ import os
 
 class Config:
     def __init__(self,
-                 version='roberta-base-1.12',
+                 version='roberta-base-1.13',
                  device='cuda:0',
                  debug=True,
                  eval=False,
