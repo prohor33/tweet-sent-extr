@@ -1,7 +1,6 @@
 *.ipynb_checkpoints*
 data
 runs
-models
 storage/*
 .DS_Store
 .idea/*
@@ -9,3 +8,6 @@ storage/*
 !storage/dataset
 storage/dataset/*
 !storage/dataset/train_v0.csv
+!storage/dataset/train.csv
+!storage/dataset/test.csv
+!storage/dataset/sample_submission.csv
